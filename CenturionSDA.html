@@ -313,7 +313,6 @@
             margin-bottom: 12px;
             padding-bottom: 12px;
             border-bottom: 1px solid var(--border);
-            font-size: 1.05rem;
         }
         
         .summary-item:last-child {
@@ -931,25 +930,55 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<div class="spinner"></div> Processing...';
                 
-                // Simulate form submission and email sending
-                setTimeout(() => {
-                    // Show success message
-                    document.getElementById('successMessage').style.display = 'block';
-                    document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+                // Prepare data for submission
+                const formData = {
+                    name,
+                    email,
+                    amount,
+                    frequency,
+                    startDate,
+                    method,
+                    notes,
+                    phone,
+                    timestamp: new Date().toISOString()
+                };
+                
+                try {
+                    // Submit to Google Apps Script
+                    const response = await fetch('https://script.google.com/macros/s/AKfycbwSvXqqXr2-VgHAYaCjeFaGaSPDBrlnWH0VQaPVBx8-OP_Akqbm6kP7r4o6aOEHW6CN/exec', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
                     
-                    // Reset form
-                    e.target.reset();
+                    const result = await response.json();
                     
-                    // Reset date to today
-                    document.getElementById('startDate').value = formattedDate;
-                    
-                    // Show success status
-                    showStatus('Pledge submitted successfully! Confirmation email sent.', 'success');
-                    
+                    if (result.result === 'success') {
+                        // Show success message
+                        document.getElementById('successMessage').style.display = 'block';
+                        document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+                        
+                        // Reset form
+                        e.target.reset();
+                        
+                        // Reset date to today
+                        document.getElementById('startDate').value = formattedDate;
+                        
+                        // Show success status
+                        showStatus('Pledge submitted successfully! Confirmation email sent.', 'success');
+                    } else {
+                        showStatus('There was an error submitting your pledge. Please try again.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus('There was an error submitting your pledge. Please try again.', 'error');
+                } finally {
                     // Re-enable submit button
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-handshake"></i> Commit My Pledge';
-                }, 2000);
+                }
             });
             
             // Initial summary update
